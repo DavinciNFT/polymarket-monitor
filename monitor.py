@@ -3,8 +3,13 @@ import time
 import requests
 import os
 import json
+import threading
 from datetime import datetime
 from dotenv import load_dotenv
+from flask import Flask
+
+# Flask app for Render web service
+app = Flask(__name__)
 
 # Load .env
 load_dotenv()
@@ -58,39 +63,37 @@ def fetch_markets():
         r = requests.get(MARKETS_URL, timeout=REQUEST_TIMEOUT)
         r.raise_for_status()
         data = r.json()
-        # The API may return a dict with "markets"; handle both
         return data.get("markets", data)
     except Exception as e:
         print(f"[{datetime.utcnow().isoformat()}] Error fetching markets: {e}")
         return []
 
 def format_price(p):
-    # price given as 0..1 float, convert to percentage points for readability (e.g., 0.37 -> 37.00%)
     try:
         return f"{float(p)*100:.2f}%"
     except Exception:
         return str(p)
 
-def main_loop():
-    last_prices = load_last_prices()  # dict: key -> price (float)
+def monitor_loop():
+    """Background thread to continuously check market updates."""
+    last_prices = load_last_prices()
     print(f"[{datetime.utcnow().isoformat()}] Starting monitor. Loaded {len(last_prices)} stored prices.")
+
     while True:
         try:
             markets = fetch_markets()
             if not markets:
                 print(f"[{datetime.utcnow().isoformat()}] No markets received.")
+
             for m in markets:
                 market_id = m.get("id") or m.get("marketAddress") or m.get("conditionId") or m.get("slug")
                 title = m.get("title") or m.get("name") or m.get("slug") or "Untitled Market"
                 slug = m.get("slug") or market_id
                 outcomes = m.get("outcomes") or m.get("pairs") or []
-                # If the market has outcome objects with 'price' and 'name' fields:
+
                 for out in outcomes:
                     outcome_name = out.get("name") or out.get("label") or out.get("title") or "Outcome"
-                    price = out.get("price")
-                    # Some APIs use 'lastPrice' or 'last_price' — try variations
-                    if price is None:
-                        price = out.get("lastPrice") or out.get("last_price") or out.get("last")
+                    price = out.get("price") or out.get("lastPrice") or out.get("last_price") or out.get("last")
                     if price is None:
                         continue
                     try:
@@ -100,12 +103,9 @@ def main_loop():
 
                     key = f"{market_id}||{outcome_name}"
                     old_price = last_prices.get(key)
-                    # Save current price (persist later)
                     last_prices[key] = price
-                    # If we have a previous value, compute relative change
-                    if old_price is not None:
-                        if old_price == 0:
-                            continue
+
+                    if old_price is not None and old_price != 0:
                         change = (price - old_price) / old_price
                         if abs(change) >= CHANGE_THRESHOLD:
                             pct = change * 100.0
@@ -121,24 +121,24 @@ def main_loop():
                             )
                             print(f"[{time_str}] Significant change detected for {title} / {outcome_name}: {pct:+.2f}%")
                             send_telegram_message(msg)
-            # Save last prices to disk after processing batch
+
             save_last_prices(last_prices)
         except Exception as e:
-            print(f"[{datetime.utcnow().isoformat()}] Unexpected error in main loop: {e}")
-        # Sleep for configured interval
+            print(f"[{datetime.utcnow().isoformat()}] Unexpected error in monitor loop: {e}")
+
         print(f"[{datetime.utcnow().isoformat()}] Sleeping for {CHECK_INTERVAL_SECONDS/60:.0f} minutes...\n")
         time.sleep(CHECK_INTERVAL_SECONDS)
 
-if __name__ == "__main__":
-    main_loop()
-from flask import Flask
-app = Flask(__name__)
-
 @app.route('/')
 def home():
-    return "Polymarket Monitor is running."
+    return "✅ Polymarket Monitor is active and running."
+
+def main():
+    """Entry point for Render."""
+    # Start background monitoring in a separate thread
+    threading.Thread(target=monitor_loop, daemon=True).start()
+    # Keep Flask alive for Render
+    app.run(host="0.0.0.0", port=int(os.environ.get("PORT", 10000)))
 
 if __name__ == "__main__":
-    import threading
-    threading.Thread(target=main, daemon=True).start()
-    app.run(host="0.0.0.0", port=10000)
+    main()
