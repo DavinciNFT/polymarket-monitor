@@ -21,8 +21,8 @@ if not TELEGRAM_BOT_TOKEN or not TELEGRAM_CHAT_ID:
     raise SystemExit("Set TELEGRAM_BOT_TOKEN and TELEGRAM_CHAT_ID in .env")
 
 # Config
-CHECK_INTERVAL_SECONDS = 60  # check every 1 minute for testing
-CHANGE_THRESHOLD = 0.02                  # 2% (relative change)
+CHECK_INTERVAL_SECONDS = 15 * 60         # 15 minutes (900 seconds)
+CHANGE_THRESHOLD = 0.005                 # 0.5% (relative change)
 MARKETS_URL = "https://api.polymarket.com/gamma/markets"
 LAST_PRICES_FILE = "last_prices.json"
 REQUEST_TIMEOUT = 20                     # seconds
