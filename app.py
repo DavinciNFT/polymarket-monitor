@@ -1,6 +1,7 @@
 from flask import Flask
 import threading
 import monitor
+import os  # 👈 Add this line
 
 app = Flask(__name__)
 
@@ -9,6 +10,7 @@ def home():
     return "✅ Polymarket Monitor is running!"
 
 def start_monitor():
+    print("[Monitor] Starting Polymarket monitor service...")
     monitor_thread = threading.Thread(target=monitor.main, daemon=True)
     monitor_thread.start()
 
