@@ -137,11 +137,21 @@ def main_loop():
     """Main monitoring loop."""
     while True:
         try:
-            # TODO: Add your market fetching and checking logic here
+            # Test heartbeat message
+            now = datetime.utcnow().strftime("%Y-%m-%d %H:%M:%S UTC")
+            print(f"[{now}] Monitor heartbeat — checking markets...")
+            send_telegram_message(f"🩵 Heartbeat: monitor active at {now}")
+
+            # Existing logic placeholder
+            # markets = fetch_markets()
+            # process_markets(markets)
+
             print(f"[{datetime.utcnow().isoformat()}] Sleeping for {CHECK_INTERVAL_SECONDS/60:.0f} minutes...\n")
             time.sleep(CHECK_INTERVAL_SECONDS)
+
         except Exception as e:
             print(f"[{datetime.utcnow().isoformat()}] Unexpected error in main loop: {e}")
+
 
 
 def start_monitor():
