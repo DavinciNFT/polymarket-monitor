@@ -10,6 +10,24 @@ from dotenv import load_dotenv
 # Load .env
 load_dotenv()
 
+# Polymarket API URL
+MARKETS_URL = "https://api.polymarket.com/gamma/markets"
+
+def test_api_connectivity():
+    """Checks if Polymarket API is reachable and logs the result."""
+    print("[Connectivity Test] Testing connection to Polymarket API...")
+    try:
+        r = requests.get(MARKETS_URL, timeout=10)
+        r.raise_for_status()
+        data = r.json()
+        count = len(data.get("markets", data))
+        print(f"[Connectivity Test] ✅ API reachable. Received {count} markets.")
+        return True
+    except Exception as e:
+        print(f"[Connectivity Test] ❌ API NOT reachable: {e}")
+        return False
+
+
 TELEGRAM_BOT_TOKEN = os.getenv("TELEGRAM_BOT_TOKEN")
 TELEGRAM_CHAT_ID = os.getenv("TELEGRAM_CHAT_ID")
 
@@ -148,6 +166,7 @@ def start_monitor():
     This function does NOT start any web server; keep webserver in app.py.
     """
     print("[Monitor] Starting Polymarket monitor service...")
+test_api_connectivity()
     try:
         send_telegram_message("✅ Polymarket Monitor started successfully 🚀")
     except Exception as e:
