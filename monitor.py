@@ -27,7 +27,6 @@ def test_api_connectivity():
         print(f"[Connectivity Test] ❌ API NOT reachable: {e}")
         return False
 
-
 TELEGRAM_BOT_TOKEN = os.getenv("TELEGRAM_BOT_TOKEN")
 TELEGRAM_CHAT_ID = os.getenv("TELEGRAM_CHAT_ID")
 
@@ -161,17 +160,30 @@ def main_loop():
         time.sleep(CHECK_INTERVAL_SECONDS)
 
 def start_monitor():
-    """
-    Start the background monitor thread and send a startup message.
-    This function does NOT start any web server; keep webserver in app.py.
-    """
+    """Entry point for Render — starts the monitor in a background thread and keeps Flask alive."""
     print("[Monitor] Starting Polymarket monitor service...")
-test_api_connectivity()
+
+    # 🔍 Test API connectivity before continuing
+    test_api_connectivity()
+
+    # Send Telegram startup message
     try:
         send_telegram_message("✅ Polymarket Monitor started successfully 🚀")
     except Exception as e:
-        print(f"[{datetime.utcnow().isoformat()}] Failed to send startup Telegram message: {e}")
+        print(f"[Monitor] Failed to send Telegram startup message: {e}")
 
-    t = threading.Thread(target=main_loop, daemon=True)
-    t.start()
+    # Start background monitoring in a separate thread
+    threading.Thread(target=main_loop, daemon=True).start()
     print("[Monitor] Background monitoring thread started.")
+
+    # Keep Flask alive for Render
+    from flask import Flask
+    import os
+
+    app = Flask(__name__)
+
+    @app.route('/')
+    def index():
+        return "Polymarket monitor is running."
+
+    app.run(host="0.0.0.0", port=int(os.environ.get("PORT", 10000)))
