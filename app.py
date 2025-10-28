@@ -1,23 +1,16 @@
-from flask import Flask
-import threading
+# app.py
 import os
-import monitor
+from flask import Flask
+from monitor import start_monitor   # import from your monitor.py
 
 app = Flask(__name__)
 
-@app.route("/")
+@app.route('/')
 def home():
-    return "✅ Polymarket Monitor is running!"
+    return "✅ Polymarket Monitor is active and running."
 
-def start_monitor():
-    print("[Monitor] Starting Polymarket monitor service...")
-    try:
-        monitor_thread = threading.Thread(target=monitor.main_loop, daemon=True)
-        monitor_thread.start()
-        print("[Monitor] Background monitoring thread started.")
-    except Exception as e:
-        print(f"[Monitor] Failed to start monitoring thread: {e}")
+# Start background monitoring thread **before** starting Flask
+start_monitor()
 
 if __name__ == "__main__":
-    start_monitor()
     app.run(host="0.0.0.0", port=int(os.environ.get("PORT", 10000)))
