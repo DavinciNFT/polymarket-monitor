@@ -135,10 +135,9 @@ def home():
 
 def main_loop():
     """Main monitoring loop."""
-    # your loop logic here (fetch_markets, detect changes, etc.)
     while True:
         try:
-            # existing market checking logic...
+            # TODO: Add your market fetching and checking logic here
             print(f"[{datetime.utcnow().isoformat()}] Sleeping for {CHECK_INTERVAL_SECONDS/60:.0f} minutes...\n")
             time.sleep(CHECK_INTERVAL_SECONDS)
         except Exception as e:
@@ -146,7 +145,7 @@ def main_loop():
 
 
 def start_monitor():
-    """Entry point for Render — starts the monitor in a background thread."""
+    """Entry point for Render — starts the monitor in a background thread and keeps Flask alive."""
     print("[Monitor] Starting Polymarket monitor service...")
 
     # Send Telegram startup message
@@ -158,6 +157,20 @@ def start_monitor():
     # Start background monitoring in a separate thread
     threading.Thread(target=main_loop, daemon=True).start()
     print("[Monitor] Background monitoring thread started.")
+
+    # Keep Flask alive for Render
+    from flask import Flask
+    import os
+
+    app = Flask(__name__)
+
+    @app.route('/')
+    def index():
+        return "Polymarket monitor is running."
+
+    # Flask keeps the Render service alive
+    app.run(host="0.0.0.0", port=int(os.environ.get("PORT", 10000)))
+
 
 
 
