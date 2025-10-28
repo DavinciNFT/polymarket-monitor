@@ -134,24 +134,55 @@ def home():
     return "✅ Polymarket Monitor is active and running."
 
 def main_loop():
-    """Main monitoring loop."""
+    """Main monitoring loop — fetches and detects Polymarket price changes."""
+    print("[Monitor] Main monitoring loop started.")
     while True:
         try:
-            # Test heartbeat message
-            now = datetime.utcnow().strftime("%Y-%m-%d %H:%M:%S UTC")
-            print(f"[{now}] Monitor heartbeat — checking markets...")
-            send_telegram_message(f"🩵 Heartbeat: monitor active at {now}")
+            markets = fetch_markets()
+            if not markets:
+                print(f"[{datetime.utcnow().isoformat()}] No markets received.")
+            for m in markets:
+                market_id = m.get("id") or m.get("marketAddress") or m.get("conditionId") or m.get("slug")
+                title = m.get("title") or m.get("name") or m.get("slug") or "Untitled Market"
+                slug = m.get("slug") or market_id
+                outcomes = m.get("outcomes") or m.get("pairs") or []
+                for out in outcomes:
+                    outcome_name = out.get("name") or out.get("label") or out.get("title") or "Outcome"
+                    price = out.get("price") or out.get("lastPrice") or out.get("last_price")
+                    if not price:
+                        continue
+                    try:
+                        price = float(price)
+                    except:
+                        continue
 
-            # Existing logic placeholder
-            # markets = fetch_markets()
-            # process_markets(markets)
+                    key = f"{market_id}||{outcome_name}"
+                    old_price = last_prices.get(key)
+                    last_prices[key] = price
 
-            print(f"[{datetime.utcnow().isoformat()}] Sleeping for {CHECK_INTERVAL_SECONDS/60:.0f} minutes...\n")
-            time.sleep(CHECK_INTERVAL_SECONDS)
+                    if old_price and old_price != 0:
+                        change = (price - old_price) / old_price
+                        if abs(change) >= CHANGE_THRESHOLD:
+                            pct = change * 100.0
+                            time_str = datetime.utcnow().strftime("%Y-%m-%d %H:%M:%S UTC")
+                            msg = (
+                                f"*Polymarket Update — {title}*\n"
+                                f"_Checked at:_ {time_str}\n"
+                                f"*Outcome:* {outcome_name}\n"
+                                f"*Old odds:* {format_price(old_price)}\n"
+                                f"*New odds:* {format_price(price)}\n"
+                                f"*Change:* {pct:+.2f}%\n"
+                                f"[Open market](https://polymarket.com/markets/{slug})"
+                            )
+                            print(f"[{time_str}] Change detected: {title}/{outcome_name}: {pct:+.2f}%")
+                            send_telegram_message(msg)
 
+            save_last_prices(last_prices)
         except Exception as e:
             print(f"[{datetime.utcnow().isoformat()}] Unexpected error in main loop: {e}")
 
+        print(f"[{datetime.utcnow().isoformat()}] Sleeping for {CHECK_INTERVAL_SECONDS/60:.0f} minutes...\n")
+        time.sleep(CHECK_INTERVAL_SECONDS)
 
 
 def start_monitor():
