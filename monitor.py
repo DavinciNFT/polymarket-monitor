@@ -133,9 +133,7 @@ def monitor_loop():
 def home():
     return "✅ Polymarket Monitor is active and running."
 
-def main_loop():
-    ...
-
+def start_monitor():
     """Entry point for Render — starts the monitor in a background thread."""
     print("[Monitor] Starting Polymarket monitor service...")
 
@@ -149,7 +147,5 @@ def main_loop():
     threading.Thread(target=main_loop, daemon=True).start()
     print("[Monitor] Background monitoring thread started.")
 
-    # Keep Flask alive for Render
-    app.run(host="0.0.0.0", port=int(os.environ.get("PORT", 10000)))
 
 
