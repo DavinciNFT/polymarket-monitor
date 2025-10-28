@@ -133,7 +133,9 @@ def monitor_loop():
 def home():
     return "✅ Polymarket Monitor is active and running."
 
-def main():
+def main_loop():
+    ...
+
     """Entry point for Render — starts the monitor in a background thread."""
     print("[Monitor] Starting Polymarket monitor service...")
 
@@ -150,14 +152,4 @@ def main():
     # Keep Flask alive for Render
     app.run(host="0.0.0.0", port=int(os.environ.get("PORT", 10000)))
 
-if __name__ == "__main__":
-    print("[Manual Test] Sending test message to Telegram...")
-    send_telegram_message(
-        "*Test Alert — Polymarket Monitor*\n"
-        "_This is a simulated alert to verify Telegram notifications._\n"
-        "*Outcome:* Demo Outcome\n"
-        "*Old odds:* 0.45\n"
-        "*New odds:* 0.52\n"
-        "*Change:* +15.6%\n"
-        "[Open market](https://polymarket.com/)"
-    )
+
