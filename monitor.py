@@ -133,6 +133,18 @@ def monitor_loop():
 def home():
     return "✅ Polymarket Monitor is active and running."
 
+def main_loop():
+    """Main monitoring loop."""
+    # your loop logic here (fetch_markets, detect changes, etc.)
+    while True:
+        try:
+            # existing market checking logic...
+            print(f"[{datetime.utcnow().isoformat()}] Sleeping for {CHECK_INTERVAL_SECONDS/60:.0f} minutes...\n")
+            time.sleep(CHECK_INTERVAL_SECONDS)
+        except Exception as e:
+            print(f"[{datetime.utcnow().isoformat()}] Unexpected error in main loop: {e}")
+
+
 def start_monitor():
     """Entry point for Render — starts the monitor in a background thread."""
     print("[Monitor] Starting Polymarket monitor service...")

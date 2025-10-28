@@ -1,21 +1,20 @@
-# app.py
 from flask import Flask
 import threading
 import os
-import monitor  # your monitoring logic file
+import monitor
 
 app = Flask(__name__)
 
 @app.route("/")
 def home():
-    return "✅ Polymarket Monitor is running on Render."
+    return "✅ Polymarket Monitor is running!"
 
 def start_monitor():
     print("[Monitor] Starting Polymarket monitor service...")
     try:
-        t = threading.Thread(target=monitor.main_loop, daemon=True)
-        t.start()
-        print("[Monitor] Background monitor thread started successfully.")
+        monitor_thread = threading.Thread(target=monitor.main_loop, daemon=True)
+        monitor_thread.start()
+        print("[Monitor] Background monitoring thread started.")
     except Exception as e:
         print(f"[Monitor] Failed to start monitoring thread: {e}")
 
